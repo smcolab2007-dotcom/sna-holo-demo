@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face2Face SNA Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #0a0f29, #000);
+      color: #eee;
+      overflow: hidden;
+    }
+    header {
+      text-align: center;
+      padding: 1rem;
+      font-size: 1.5rem;
+      color: #77c9ff;
+      background: rgba(0, 0, 0, 0.5);
+      border-bottom: 1px solid #223;
+    }
+    #main {
+      display: flex;
+      height: calc(100vh - 80px);
+    }
+    #left-panel {
+      width: 25%;
+      background: rgba(20, 25, 40, 0.8);
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    #graph-area {
+      flex: 1;
+      position: relative;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .msg-box {
+      margin-top: 1rem;
+    }
+    select, input, button {
+      margin-top: 0.3rem;
+      width: 100%;
+      padding: 0.4rem;
+      background: #111;
+      color: #eee;
+      border: 1px solid #444;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+  <header>🌐 Face2Face – SNA Demo (Educational)</header>
+
+  <div id="main">
+    <div id="left-panel">
+      <h3>Interaction Panel</h3>
+      <div class="msg-box">
+        <label>Your Name:</label>
+        <input type="text" id="username" placeholder="Enter your name" />
+        <label>Message:</label>
+        <input type="text" id="message" placeholder="Say something..." />
+        <label>Type:</label>
+        <select id="msgType">
+          <option>Broadcast</option>
+          <option>Unicast</option>
+          <option>Multicast</option>
+          <option>Anycast</option>
+          <option>ACK</option>
+        </select>
+        <button onclick="sendMessage()">Send</button>
+      </div>
+
+      <div id="feed">
+        <h4>Community Feed</h4>
+        <ul id="postList"></ul>
+      </div>
+    </div>
+
+    <div id="graph-area">
+      <canvas id="holoCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // === 3D HOLOGRAPHIC NODE ===
+    const canvas = document.getElementById("holoCanvas");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+    renderer.setSize(window.innerWidth * 0.75, window.innerHeight - 80);
+
+    const geometry = new THREE.SphereGeometry(1, 64, 64);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x44aaff,
+      emissive: 0x0088ff,
+      emissiveIntensity: 0.5,
+      transparent: true,
+      opacity: 0.8,
+      wireframe: true
+    });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+
+    const light = new THREE.PointLight(0x44aaff, 2, 50);
+    light.position.set(2, 2, 2);
+    scene.add(light);
+    camera.position.z = 3;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      sphere.rotation.y += 0.01;
+      sphere.rotation.x += 0.005;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // === D3 GRAPH DATA (for future use) ===
+    const nodes = [];
+    const links = [];
+    const width = window.innerWidth * 0.75;
+    const height = window.innerHeight - 80;
+
+    const svg = d3.select("#graph-area")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .style("position", "absolute")
+      .style("top", 0)
+      .style("left", 0);
+
+    const linkGroup = svg.append("g");
+    const nodeGroup = svg.append("g");
+
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).distance(100))
+      .force("charge", d3.forceManyBody().strength(-200))
+      .force("center", d3.forceCenter(width / 2, height / 2));
+
+    function updateGraph() {
+      const link = linkGroup.selectAll("line").data(links);
+      link.exit().remove();
+      link.enter().append("line").attr("stroke", "#00ffff").attr("stroke-width", 1);
+
+      const node = nodeGroup.selectAll("circle").data(nodes);
+      node.exit().remove();
+      node.enter().append("circle").attr("r", 8).attr("fill", "#88f");
+
+      simulation.nodes(nodes).on("tick", () => {
+        nodeGroup.selectAll("circle")
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y);
+        linkGroup.selectAll("line")
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+      });
+
+      simulation.force("link").links(links);
+      simulation.alpha(1).restart();
+    }
+
+    // === Simulate Message Send ===
+    function sendMessage() {
+      const name = document.getElementById("username").value.trim();
+      const msg = document.getElementById("message").value.trim();
+      const type = document.getElementById("msgType").value;
+
+      if (!name || !msg) {
+        alert("Enter name and message");
+        return;
+      }
+
+      const li = document.createElement("li");
+      li.textContent = `${name} (${type}): ${msg}`;
+      document.getElementById("postList").prepend(li);
+
+      // Create node/links
+      const sender = nodes.find(n => n.id === name) || { id: name };
+      if (!nodes.includes(sender)) nodes.push(sender);
+
+      if (type === "Broadcast") {
+        nodes.forEach(n => {
+          if (n.id !== name) links.push({ source: sender, target: n });
+        });
+      } else if (type === "Unicast") {
+        const target = nodes[Math.floor(Math.random() * nodes.length)];
+        if (target && target.id !== name) links.push({ source: sender, target });
+      } else if (type === "Multicast") {
+        for (let i = 0; i < 3 && nodes.length > 1; i++) {
+          const target = nodes[Math.floor(Math.random() * nodes.length)];
+          if (target && target.id !== name) links.push({ source: sender, target });
+        }
+      } else if (type === "Anycast") {
+        const target = nodes[Math.floor(Math.random() * nodes.length)];
+        if (target && target.id !== name) links.push({ source: sender, target });
+      } else if (type === "ACK") {
+        links.push({ source: sender, target: sender });
+      }
+
+      updateGraph();
+      document.getElementById("message").value = "";
+    }
+
+    // === Placeholder for future Firebase ===
+    // TODO: integrate Firebase Auth + Firestore here.
+  </script>
+</body>
+</html>
