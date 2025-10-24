@@ -1,0 +1,38 @@
+body {
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle, #0a0a0a, #111);
+  color: #fff;
+  text-align: center;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-top: 10px;
+  color: cyan;
+}
+
+.network {
+  position: relative;
+  height: 60vh;
+  width: 100%;
+}
+
+.node {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  line-height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #04c, #0ff);
+  box-shadow: 0 0 15px cyan;
+  animation: rotate 10s linear infinite;
+}
+
+#alice { top: 20%; left: 45%; animation-delay: 0s; }
+#bob   { top: 60%; left: 25%; animation-delay: 2s; }
+#eve   { top: 60%; left: 65%; animation-delay: 4s; }
+
+@
