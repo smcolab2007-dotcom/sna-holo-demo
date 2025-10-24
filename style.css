@@ -35,4 +35,9 @@ h1 {
 #bob   { top: 60%; left: 25%; animation-delay: 2s; }
 #eve   { top: 60%; left: 65%; animation-delay: 4s; }
 
+.active {
+  box-shadow: 0 0 25px 10px yellow;
+  transition: box-shadow 0.5s;
+}
+
 @
