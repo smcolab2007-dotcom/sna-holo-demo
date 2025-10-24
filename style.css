@@ -40,4 +40,33 @@ h1 {
   transition: box-shadow 0.5s;
 }
 
-@
+/* ====== Add BELOW all existing CSS in style.css ====== */
+
+/* Line (arrow path) styles */
+.arrow {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: cyan;
+  box-shadow: 0 0 10px cyan;
+  transform-origin: 0 50%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Arrowhead (small glowing tip) */
+.arrow::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  top: -3px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid cyan;
+  filter: drop-shadow(0 0 5px cyan);
+}
+
+/* When arrow is active, it becomes visible */
+.arrow.active {
+  opacity: 1;
+}
